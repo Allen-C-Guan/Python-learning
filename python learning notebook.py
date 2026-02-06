@@ -1,3 +1,4 @@
+# 依据python公开文档，自行学习的笔记上传
 import sys
 
 # 赋值与表达式之间的关系
@@ -320,13 +321,223 @@ some_function(x)
 
 从而达成，在一个函数里，只有对形参进行"."的显示操作（说明显示的获取了内容），才有可能有副作用
 '''
+#################################### 插入mac片段1 #######################################
+'''
+**************************************  类  ********************************
+python和C++成员函数差异解析：
+1. python中，成员函数就是普通函数，和外部函数一样，储存在类字典中，运行时现绑定
+2. C++ 成员函数是真正的成员函数，编译时绑定
+python哲学：
+1. 显示由于隐式，所以要显示的写出self
+2. 一致性：成员函数没什么特殊的，只是普通函数的第一个入参是实例自己罢了
 
+
+成员函数：
+1. python所有成员函数都是virtual的
+2. python中多态的实现方式是：
+    算法上：MRO算法
+    数据上：Class.__bases__(直接父类), Class.__mro__(命名空间解析顺序（编译时确定）), Class.__subclasses__(直接子类)
+
+def get_attribute(obj, attr_name):
+    # 1. obj的dict里是否能找到
+    # 2. 遍历mro，在遍历当前namespace下的dict是否能找到该内容
+    # 3. 如果找到了就返回
+
+所以这里本质上其实是依赖mro的顺序，以及每个mro下的dict，实现动态绑定的，这是运行时现场查找的
+
+'''
+
+# 这里就更反映出了，其实成员函数就是入参是self的函数仅此而已，类内可以去直接通过赋值来复用这个函数。
+def out_side_member_func(self, a):  # 如果要被类内引用，必须加上self
+    print("this is out side member func with val =", a)
+
+
+
+class MyClass:
+    def __init__(self):
+        self.__private_var = 3.14
+
+    def __private_func(self):
+        print("this is private func")
+
+    def f(self): # 成员函数被调用的时候，成员自己作为self的实参，而不需要外部显示的调用
+        return "hello world!"
+
+    g = f  #这里是把成员函数赋值给了另一个变量，g和h没有任何区别
+    in_side_member_func = out_side_member_func
+
+class Class2:
+    func = out_side_member_func  # 两个类共用一个函数，外部定义的函数成了接口了！
+
+class MyDerivedClass(MyClass):
+    def f(self):
+        return "hello son"
+class MyGrandSonClass(MyDerivedClass):
+    pass
+
+def ClassTest():
+    x = MyClass()
+    print(x.f())
+    print(x.g())
+    x.in_side_member_func(10)
+    # x.out_side_member_func(20)   #这是非法的！
+
+    y = Class2()
+    y.func(20)
+    print(x.__class__)  # 通过__class__可以看到type的类型
+
+    # 继承
+    x_son = MyDerivedClass()
+    print(x_son.f())  #hello son
+    print(x_son.g())  # hello world! 也就是说，父类中的g = f，真的就是等于，及时子类已经重写了f，g也是等于父类的f，这是因为g = f 本质上是g = MyClass.f
+
+    x_grand_son = MyGrandSonClass()
+    print(MyGrandSonClass.__bases__)
+    print(MyGrandSonClass.__mro__)
+    print(MyClass.__subclasses__())
+    print(x_grand_son.__dict__)
+    print(isinstance(x_son, MyClass))
+
+'''
+**************************** 类的private ***************************************
+python中，没有真正的private的类，通常情况下我们约定俗成的private有如下两类
+1. self._private  #这只是一种命名约定，没有强制要求
+2. self.__private #这里解释器会改变__的命名，改成_ClassName__private，在继承体系中，会让不同子类之间，有不同的命名。
+
+__private
+用法1：避免子类覆盖父类接口：例如  __overrided_func_others的用法
+
+'''
+class Private_Base_Class:
+    def __init__(self):
+        __private_val = 10
+        public_val = 2
+
+    def overrided_func(self):
+        print("this is base_func")
+
+    def outside_func(self):
+        self.__overrided_func_others()  # 此时这里就没有多态了！
+
+    __overrided_func_others = overrided_func  # 这里对于Private_Base_Class中，overrided_func_others = Private_Base_Class_overrided_func
+                                            # 对于Private_Drived_Class中，overrided_func_others == Private_Drived_Class_overrided_func_others
+                                            # 由于python所有接口都是虚接口，因此针对想要避免父类行为被子类通过重写其中某个接口而覆盖时，需要这个操作
+
+class Private_Drived_Class(Private_Base_Class):
+    def overrided_func(self):
+        print("this is overrided func")
+
+class TestNothing:
+    def __init__(self):
+        self._private = 100
+        self.__private = 10
+
+def private_func_test():
+    b1 = Private_Base_Class()
+    d1 = Private_Drived_Class()
+    b1.outside_func()
+    d1.outside_func()
+    t = TestNothing()
+    print(t._TestNothing__private)
+    print(t._private)
+
+
+'''
+*************************************** 迭代器 **********************************************
+只要类有iter和next， 就可以被迭代
+使用迭代器的常用方法：for...in iterater
+注意：迭代器中，next接口中，当迭代到终点时，是抛出异常！不是返回异常！
+'''
+
+class ReverseIt:
+    def __init__(self, data):
+        self.index = len(data)
+        self.data = data
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.index == 0:
+            raise StopIteration   # 这里是抛出异常，不是return 异常！
+        self.index -= 1
+        return self.data[self.index]
+
+def iteration_test():
+    l = [1,2,3,4,5]
+    r_it = ReverseIt(l)
+    for item in r_it:
+        print (item)
+
+
+'''
+############################### 生成器  ####################################
+1. 生成器和迭代器最大的不同在于，生成器是惰性生成，迭代器是一次性全部生成的，iteration对于内存的压力非常大
+2. yield通过一种优雅的函数形式，实现了next，iter接口，实现了current的存储，断点继续执行等高级用法，体现了python函数编程的核心
+
+def range_generator(start, end):
+    current = start
+    while current < end:
+        # Python自动保存：current的值、程序执行位置(while循环内)
+        yield current
+        # 恢复执行时自动恢复：current的值、程序位置
+        current += 1
+'''
+
+def reverse_generator(data):
+    current = len(data)-1
+    while current >= 0:
+        yield data[current]     # yield会将指针，current的值，都记录下来，为了下次断点可以继续执行
+        current -= 1            # 下一次调用同一个实例的next的时候，会从这一行开始执行
+
+def generater_test():
+    l = [1,2,3,4,5]
+    r = reverse_generator(l)
+    print(next(r))  # 输出5
+    print(next(r))  # 输出4
+    for i in r:   # 输出3 2 1，是接着上面输出的，因为是同一个实例
+        print(i)
+
+    print(sum([i * i for i in range(5)]))  # 这里是推导式，要把整个数组都生成出来，然后执行sum
+    print(sum(i * i for i in range(5)))  # 这里是生成式，元素一个一个生成，然后执行sum，内存要求小
+
+
+'''
+****************************************  标准库  *****************************************
+os 模块提供了许多与操作系统交互的函数:
+'''
+def std_test():
+    import os
+    print(os.getcwd())  # 返回当前工作目录
+    # os.chdir('/server/accesslogs')  # 改变当前工作目录
+    import sys
+    print(sys.argv)
+
+'''
+***************************************  用注释来生成测试用例  **********************
+'''
+def average(values):
+    """计算数字列表的算术平均值
+
+    >>> print(average([20, 30, 70]))      # 这直接把测试用例写注释里了！，这太牛逼了
+    40.0
+    """
+    return sum(values) / len(values)+1
+
+def test_doc():
+    import doctest
+    doctest.testmod()   # 自动验证嵌入式测试用例
+
+'''
+***************************************  python虚拟环境与包  **********************
+https://docs.python.org/zh-cn/3/tutorial/venv.html
+'''
 
 
 if __name__ == "__main__":
-    dt = DelTest(1)
-    print(id(dt))
-    test_del_func(dt)
+    private_func_test()
+    a = 0.1
+    print(3*a == 0.3)
     print("end of main")
 
 
