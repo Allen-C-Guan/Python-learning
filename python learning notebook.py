@@ -51,7 +51,7 @@ def for_else_test():
     else:
         print("end of with break")   # 这里else是不会被执行到的，for前有break
         # 从语法上看，else是for的一部分，break或者return的时候，也会跳过else。
-        # else的主要用途，还是在for有break的时候，能向try catch一样，抓住break，并进行处理
+        # else的主要用途，还是在for没有被break的时候，能向try catch一样，发现没有被break，并进行处理，例如for循环的查找，如果i==1没有被找到，则会被else所捕获
 
 # pass的主要作用是：语法占位，从而让编码的过程中，头脑始终保持在抽象的层次思考。
 def pass_test():
