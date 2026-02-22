@@ -321,7 +321,427 @@ some_function(x)
 
 从而达成，在一个函数里，只有对形参进行"."的显示操作（说明显示的获取了内容），才有可能有副作用
 '''
-#################################### 插入mac片段1 #######################################
+'''
+**************************   循环的技巧   **********************
+'''
+import time
+
+from package_test_mod.private import private_test
+
+
+def for_tips_test():
+    # 对dict的遍历，如果只是单纯的遍历，只会把key拿出来
+    dic_test = {"1": 20, "2": 30, "3": 40}
+    for item in dic_test:
+        print(item)
+
+    # items()的使用, items 会把key和val对都拿出来,并以tuple的形式返回
+    for key, value in dic_test.items():
+        print(key, value)
+
+    for pair in dic_test.items():
+        print(pair)
+    # enumerate()的使用，enumerate可以遍历所有可迭代的内容，同时启动计数器，计数，返回计数与对应的元素
+    for index, (key, val) in enumerate(dic_test.items()):
+        print(index, key, val)
+
+    l = [1,2,3,4,5]
+    for i, val in enumerate(l[2:4]):  # 这里就可以证明，是从零计数的，3对应的计数是0
+        print(i,val)
+
+    # zip
+    # 第i个iterater，返回的是所有由所有被迭代对象的第i个对象组成的tuple
+    l1 = [1,2,3,4,5]
+    l2 = {"A":1,"B":2,"C":3,"D":4,"E":5}
+    l3 = (1,2,3,4,5)
+    print(*zip(l1, l2, l3))  # zip 返回的是迭代器，只有解包才会打印内容，解包的实现就是遍历迭代器，放到list里然后返回
+
+    for i1, i2, i3 in zip(l1, l2, l3):
+        print(i1, i2, i3)
+
+'''
+***************************  比较运算符  *************************
+in, not in:  表示一个items是否在一个容器内
+is, is not： is表示两个对象是否是同一个对象
+'''
+def cmp_op_test():
+    l = [1,2,3,4,5]
+    print(2 in l)
+    print(3 not in l)
+
+    l2 = l
+    print(l is l2)
+
+    a = 1
+    b = 2
+    c = 2
+    print(a < b == c)  # 等于 a < b && b == c，并且如果b是个表达式，b只会被调用一次，但是如果是拆分开些，b会被调用2次
+
+    l1 = [1,2,3,4,5]
+    l2 = [1,2,3,4]
+    print (l1 < l2) # 对于list比较，逐个元素对比，直到找到第一个不同的元素，输出比较结果。那如果如上l2是l1的子集，则短的序列小
+
+    ll1= [l1,l2]
+    ll2 = [l2,l2]
+    print(ll1 < ll2)  # 对比会递归进行，既会把每个item再打开，对比item内的每个元素，直到找到一个不一样的进行比较
+'''
+***************************  模块  **********************************
+通过import + 模块名称，可以将模块加到当前name space下，
+这里注意，不会污染全局作用域，添加的是模块，如果要使用模块下的内容，需要mod_name.val_name的形式来使用
+这样做的好处是，import的名称不会对当前作用域产生命名污染，import的内容，必须显示.形式的调用
+
+注意：每个模块都会有自己的私有符号表，该表将所有本模块的函数，都定义为全局变量，可以放心使用，而另一个模块的必须要用modname.itemname
+的形式来使用
+
+***** 污染全局作用域的导入方法 ******
+好处：不用总点点点
+坏处：污染作用域
+from modname import itemsname
+这里，会把itemsname直接放到本mod下的全局作用域去，这可能会导致和本mod的命名冲突
+
+from modname import *
+这里是把有非 _items都放到本mod下的全局作用域去了
+
+****** 脚本运行  *********
+当mod有main函数的时候，既 __name__ == "__main__"的时候，可以直接执行该脚本
+但是作为mod import的时候，又不会被import进来，这样一个py文件，既可以被import，又可以被当做脚本来使用
+python fibo.py 50
+
+'''
+
+
+# from fib import fib1  # 这里是吧fib中的fib1直接拿过来，放到全局作用域里去了，这和本mod中的同名func混合了，作用域冲突了
+# def fib1(n):
+#     """Write Fibonacci series up to n."""
+#     print("this is main mod fib func")
+#     a, b = 0, 1
+#     while a < n:
+#         print(a, end=' ')
+#         a, b = b, a+b
+#     print()
+
+
+g_num = 100
+def mod_test():
+    fib1(10)  # 如果使用 from modname import funcname, 那就会作用域污染了，
+    print(g_num)   # 这里是全局作用域
+    # print(fib.g_num)  # 必须显示的调用，否则就是当前作用域的全局变量
+
+'''
+**************************  模块的搜索顺序 *******************
+Python 按以下顺序搜索模块：
+1.搜索优先级（从高到低）：
+2. 内置模块（Built-in modules）
+3. 当前脚本所在目录
+4. PYTHONPATH 环境变量指定的目录
+5. 标准库目录
+6. 第三方包目录（site-packages）
+
+也就是说，如果当前目录下有与标准库同名的mod，将会掩盖标准库
+
+
+
+
+***************************** 标准模块 *****************************
+例如sys 模块, 存在于所有解释器下的
+
+
+'''
+
+
+'''
+************************ dir() **************************
+用来查找模块内定义的所有的名称（func，var等）
+'''
+def dir_test():
+    import fib
+    print(dir(fib))
+    print(dir(sys))
+    print(fib.__name__)
+    print(fib.__file__)
+    print(fib.__cached__)  # 编译后的文件，被缓存了
+
+
+'''
+**************************** 包 *********************************
+包指的是利用“.”的方式来构造命名空间的一种方式
+其解包的机制如下：
+from package import item
+1. 先用item匹配函数，变量等
+2. 如果未找到，则假定是模块，按照模块去import，失败则抛出异常
+
+包的使用方法如下几种
+import A.B.C 
+A.B.C.func()  # 此时必须用全名去使用
+等价于：
+from A.B import C
+C.func()  # 这时，把C已经加到了全局作用域了，可以忽略A和B的前缀来直接使用了
+等价于
+from A.B.C import func()
+func()  #这时已经把func给加入到全局作用域了，可以忽略A B C来使用了
+
+*************** 通过 __init__ 组织package *************
+如下层级架构
+package_test_mod（文件夹）
+    |
+    |__  __init__.py
+    |__  package_test.py
+    |__ private.py
+    |__ public.py
+
+其中init是用来组织 package_test_mod 这个文件夹的，一个文件夹下，有了init后，就会被认为是一个package整体
+当import package_test_mod发生时，调用__init__的__name__函数并执行
+
+注意此时文件夹名称就是最外层包的根节点，使用时候，要以文件夹名字作为解包的起始，平级之间也要用文件夹起始解包
+
+'''
+def package_test():
+    import package_test_mod
+    package_test_mod.public.public_test()  # 可以使用不停的.操作，逐步拆包，直到拆到内层
+    from package_test_mod import public
+    public.public_test() # 这里就不用再带package_test_mod了
+    private_test()  # private 在 import package_test_mod被引用了
+
+'''
+************************  输入和输出 ***************************
+
+'''
+def format_print_test():
+    dic = {"a":1,"b":2,"c":3,"d":4,"e":5}
+    for key, val in dic.items():
+        print(f"the key is {key}, the value is {val}") # 在“”前+f，并用{val}中，将变量放到括号内
+
+    # str.format的用法,{pos},{key}表示pos或者key，用来match后面的入参的
+    print('The story of {0}, {1}, and {other}.'.format('Bill', 'Manfred',other='Georg'))
+
+'''
+************************  with ***************************
+with 可以用在任何实现了 __enter__和 __exit__的接口类上。
+
+with expression [as var]:
+    # 使用资源
+    # 代码块
+
+执行顺序：
+1. with 先调用expression，返回实例给var
+2. 执行var的__enter__
+3. 执行代码段（正常或异常）
+4. 执行var的__exit__
+5. 离开with，结束
+
+f = expression
+等于try f.open():  #获取资源
+    # 代码段   #使用资源
+    finally：
+        f.close()  # 需要手动清理
+'''
+
+class Timer:
+    def __enter__(self):
+        import time
+        self.start = time.time()
+        print(self.start)
+        return self
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        import time
+        self.end = time.time()
+        print(self.end)
+        return self
+
+def with_test():
+    with Timer() as t:
+        time.sleep(1)
+
+'''
+*********************** open **********************
+open("file name","type",encoding="utf-8")
+其中 file name是文件的内容，type w(写）,r（读）,r+（读写）,a（打开并追加，修改都在后面）
+'''
+def open_test():
+    with open("read file test.txt","r+") as f:   #配合 with使用
+        print(f.readline())  # 只读取一行
+        data = f.read() #返回字符串，以及全部内容，
+        print(type(f))
+        print(type(data))  # txt 读出来的都是str
+        print(data)  # 这里会接着上面的内容继续往后读，也就是读取第二行和第三行，不是从头开始读
+        # f.write(",just append")
+        print(f.tell())
+        f.seek(0)   # 重新将读取的光标移动到开始，index是目标位置
+        print(f.read())
+
+'''
+************************ exception ***********************
+'''
+class B(Exception):
+    pass
+class C(B):
+    pass
+class D(C):
+    pass
+# 继承关系为： B <- C <- D
+# exception的匹配关系中，可以向上匹配，不得向下匹配，既D可以匹配B，但是B不能匹配D
+# 因此如果except高优先级的是父类的话，低优先级的子类将永远无法被匹配到
+def exception_test():
+
+    '''优先级测试'''
+    for cls in [B,C,D]:  #输出BCD
+        try:
+            raise cls
+        except D:
+            print("D")
+        except C:
+            print("C")
+        except B:
+            print("B")
+
+    for cls in [B,C,D]: #输出 BBB
+        try:
+            raise cls
+        except B:
+            print("B")
+        except C:
+            print("C")
+        except D:
+            print("D")
+
+
+    '''raise 主动触发异常测试'''
+    try:
+        raise Exception("test exception")
+    except Exception as my_error:
+        print(my_error)
+        # raise       # 可以重新把当前异常向外抛。直到这个异常被成功处理
+    else:      # else指的是 当try没有触发exception的时候，才会走的，如果走到了except，则else不会走
+        print("error end")
+
+    '''异常链'''
+    # try:
+    #     open("not exist.txt")
+    # except OSError as os_error:
+        # 这里打印信息会多出from后的信息，体现出当前exception是由哪个exception导致的后果
+        # 打印结果 raise TypeError("this is type Error in the Exception") from os_error
+
+        # code
+        # raise TypeError("this is type Error in the Exception") from os_error
+
+    '''异常被捕获后的信息添加'''
+    try:
+        raise Exception("test exception")
+    except Exception as my_error:
+        my_error.add_note("we have tryed,but not works")  # 可以通过在exception中添加note，来更好的跟踪exception所走过的路
+        # raise  # 异常继续抛出
+
+
+'''
+**********************************  类 **************************************
+1. python类中，默认权限为public，包括成员变量和成员函数
+2. 所有成员函数都是virtual的
+3. 基础类型也可以被继承
+'''
+
+class MyInt(int):  # int是可以被继承的
+    pass
+
+'''
+******************************** namespace ***************************
+1. 不同命名空间之间是绝对没有关系的
+2. 命名空间是不同时刻创建的，且有不同声明周期
+    2.1 内置namespace（buildins）解释器启动创建，永远不会删除
+    2.2 模块的的全局namespace是在读取模块定义时创建的
+    2.3 function的命名空间是被调用时创建，返回时遗忘（无差异）
+3. 作用域是静态确定的，确是动态使用的
+4. 作用域的搜索顺序：
+    1. 最内层作用域，包含局部名称，并首先在其中进行搜索
+    2. 中间层（逐步向外）：那些外层闭包函数的作用域，包含“非局部、非全局”的名称，从最靠内层的那个作用域开始，逐层向外搜索。
+    3. 倒数第二层作用域，包含当前模块的全局名称
+    4. 最外层（最后搜索）的作用域，是内置名称的命名空间
+
+因此外层变量对于局部命名空间是只读的，无法修改指向的对象，但能修改对象内容，不管是入参还是外层变量，或全局变量
+如果想要修改，显示声明global或nonlocal，随后可以修改。
+
+这就是python的哲学，拒绝一切隐式操作，必须显示赋值
+'''
+global_val = [3,1,4,1,5,9]
+to_change_val = [1,2,3,4]
+def namespace_test(val):
+    print(global_val)  # val现在函数里找，找不到，到函数外找到了，既全局作用域
+    # global val在局部namespace里是不允许重新指向的，但是可以修改内容
+    global_val[0] = 10  # 这个可以，而且全局作用域的对象的内容同时也被修改
+    # global_val = [1,2]  #修改指向是非法的，对于全局变量是语法错误
+    print("inside global_val in function =", global_val)
+
+    '''
+    对于入参，不能重，但是可以修改内容，也无法重定向，
+    如果重定向发生，这意味着新建了一个对象，此后的修改，都不影响外面的值。
+    '''
+    print("inside val value before change",val)
+    val[0] = 0
+    val = [3, 4]
+    print ("inside val value after change", val)
+    '''
+    因此外层变量对于局部命名空间是只读的，无法修改指向的对象，只能修改对象内容，不管是入参还是全局变量
+    '''
+
+    global to_change_val  # 除非你显示的声明这是global变量，你才可以修改，当然如果之前没声明过，这也等于在global层面声明了一个全局变量
+    print ("inside change_val after call = ", to_change_val)
+    to_change_val= []
+
+def name_space_test_main():
+    val = [1,2]
+    namespace_test(val)
+    print("outside global_val after call =", global_val)
+    print("outside val after call =", val)
+    print ("outside change_val after call = ", to_change_val)
+'''
+************************ class ************************
+不得不提class的成员变量可以延迟添加
+例如
+class persion:
+    def __init__(self):
+        self.name
+        self.age
+    def add_contact(email, phone):
+        self.email = email
+        self.phone = phone
+
+只有当add contract被调用后才会添加联系方式，而没有被调用的add contact之前是没有这个成员的
+
+why？
+1. 动态：随时相加随时加，运行时可以添加
+2. 灵活： 不用先初始化一堆变量，然后不用空着。
+3. 支持多种初始化：可以分层分批次逐步初始化
+4. 惰性计算：很多计算代价非常大，先不算，用时候再算
+
+为什么python能这么灵活，C++却这么搓？
+C++
+那是因为C++是编译时候确定的，即使是虚函数，也是虚表，虚表是一个类公用一个，不支持动态添加的
+python：
+但是python确是运行时查找的，找到自己的dict，看看dict有没有这个属性？（运行到了现场进行字符串匹配），
+而且每个instance是由自己的独有的dict！不同的inst可以有不同的dict！这太离谱了
+
+到9.3.3了
+'''
+class MyClass:
+    class_val = 10   # 这是类变量！所有instance共享
+    def __init__(self):
+        self.instance_val = 20  # 这是成员变量，instance独享的
+    def test1(self): # 甚至可以在非__init__函数中声明成员变量
+        self.other_function_inst_val1 = 30
+    def test2(self):
+        self.other_function_inst_val2 = 40
+
+def class_test():
+    my_class = MyClass()
+    print(my_class.class_val)
+    print(my_class.instance_val)
+    my_class.test1()
+    print(my_class.other_function_inst_val1)
+    print("is inst has val2 before call test2",hasattr(my_class,"other_function_inst_val2"))  # 这时还没有val2
+    print(dir(my_class))
+    my_class.test2()
+    print("is inst has val2 after call test2",hasattr(my_class,"other_function_inst_val2")) # 调用test2后，这已经有了val2
+    print(my_class.other_function_inst_val2)  # 必须要test2调用后，val2才会被实例化
+    print(dir(my_class))
 '''
 **************************************  类  ********************************
 python和C++成员函数差异解析：
