@@ -952,6 +952,32 @@ def test_doc():
 ***************************************  python虚拟环境与包  **********************
 https://docs.python.org/zh-cn/3/tutorial/venv.html
 '''
+'''
+************************************  装饰器  *******************************
+'''
+
+
+def decoration_func(func):
+    def wrapper_func():
+        print("wrapper function be wrapped")
+        func()
+        print("end of function be wrapped")
+
+    return wrapper_func
+
+@decoration_func   #语义上来讲，这表明如下函数名字，其实是包含了wrapper功能和如下定义的功能的
+def be_decorated_func():
+    print("this is a function which be decorated")
+
+def be_decorated_func_by_hand():
+    print("this is a function which be decorated by hand")
+
+def decoration_test():
+    f_dec = be_decorated_func  # 使用decoration语法糖
+    f_dec()
+
+    f_hand = decoration_func(be_decorated_func_by_hand)  # 不使用语法糖，手动写
+    f_hand()
 
 
 if __name__ == "__main__":
